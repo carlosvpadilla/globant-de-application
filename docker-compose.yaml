@@ -1,0 +1,7 @@
+services:
+  #web:
+  cron:
+    build:
+      context: src
+      dockerfile: cron.dockerfile
+  #db:
