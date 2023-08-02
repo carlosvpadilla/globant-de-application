@@ -4,4 +4,5 @@ services:
     build:
       context: src
       dockerfile: cron.dockerfile
+  persistence:
   #db:
