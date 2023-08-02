@@ -7,6 +7,7 @@ from models import Department
 from models import Job
 from datetime import datetime
 from sqlalchemy import select
+from sqlalchemy import func
 import os
 import datetime
 import json
@@ -30,7 +31,7 @@ def _valid_keys_in_element(element: dict, check_keys: list[str]) -> bool:
     for check_key in check_keys:
         if (check_key not in element
                 or element[check_key] is None
-                or len(element[check_key]) == 0):
+                or len(str(element[check_key])) == 0):
             return False
     return True
 
@@ -46,11 +47,20 @@ def _print_error_logs(elements: list[dict], file_prefix: str) -> None:
             f.write(f'{json.dumps(element)}\n')
 
 
+def _next_id(id: int):
+    curr_id = id + 1
+    while True:
+        yield curr_id
+        curr_id += 1
+
+
 @app.route('/hired_employee/insert', methods=['POST'])
 def hired_employee_insert():
     batch = request.json['data']
     valid_inserts = []
     invalid_inserts = []
+    max_id = db.session.query(func.max(HiredEmployee.id)).scalar()
+    next_id = _next_id(max_id)
     for element in batch:
         if not _valid_keys_in_element(
                 element, ['name', 'datetime', 'department_id', 'job_id']):
@@ -94,7 +104,7 @@ def hired_employee_insert():
                 continue
         
         employee = HiredEmployee(
-            id=element.get('id', None),
+            id=element.get('id', next(next_id)),
             name=element['name'],
             datetime=iso_formatted,
             department=department,
@@ -113,6 +123,8 @@ def hired_employee_insert():
 
 @app.route('/department/insert', methods=['POST'])
 def department_insert():
+    max_id = db.session.query(func.max(Department.id)).scalar()
+    next_id = _next_id(max_id)
     batch = request.json['data']
     invalid_inserts = []
     valid_inserts = []
@@ -130,7 +142,7 @@ def department_insert():
                     continue
             valid_inserts.append(
                 Department(
-                    id=element.get('id', None),
+                    id=element.get('id', next(next_id)),
                     department=element['department']
                 )
             )
@@ -143,6 +155,8 @@ def department_insert():
 
 @app.route('/job/insert', methods=['POST'])
 def job_insert():
+    max_id = db.session.query(func.max(Job.id)).scalar()
+    next_id = _next_id(max_id)
     batch = request.json['data']
     invalid_inserts = []
     valid_inserts = []
@@ -160,7 +174,7 @@ def job_insert():
                     continue
             valid_inserts.append(
                 Job(
-                    id=element.get('id', None),
+                    id=element.get('id', next(next_id)),
                     job=element['job']
                 )
             )

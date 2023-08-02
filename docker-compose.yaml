@@ -20,7 +20,16 @@ services:
     secrets:
       - pg_user
       - pg_password
-  #web:
+  web:
+    build:
+      context: src
+      dockerfile: api.dockerfile
+    links:
+      - persistence
+    depends_on:
+      - persistence
+    ports:
+      - '8000:5001'
   cron:
     build:
       context: src
@@ -28,6 +37,8 @@ services:
     volumes:
       - ./storage/landing:/opt/landing
     links:
+      - persistence
+    depends_on:
       - persistence
   persistence:
     build:
