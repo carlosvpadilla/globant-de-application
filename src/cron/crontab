@@ -1,1 +1,1 @@
-* * * * * /opt/file_imports/execute_import.sh
+* * * * * python /opt/batch_import.py
