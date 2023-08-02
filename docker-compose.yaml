@@ -1,8 +1,44 @@
 services:
+  db:
+    image: postgres:15.3-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER_FILE=/run/secrets/pg_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+      - POSTGRES_DB=company
+      - PGUSER=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "company"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    ports:
+      - '5432:5432'
+    volumes:
+      - db:/var/lib/postgresql/data
+    secrets:
+      - pg_user
+      - pg_password
   #web:
   cron:
     build:
       context: src
       dockerfile: cron.dockerfile
   persistence:
-  #db:
+    build:
+      context: src
+      dockerfile: persistence.dockerfile
+    links:
+      - db
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  db:
+    driver: local
+secrets:
+  pg_user:
+    file: secrets/pg_user
+  pg_password:
+    file: secrets/pg_password
