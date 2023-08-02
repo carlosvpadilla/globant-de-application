@@ -1,1 +1,2 @@
 * * * * * python /opt/batch_import.py
+* * * * * python /opt/backup.py

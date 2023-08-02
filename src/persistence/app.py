@@ -13,6 +13,10 @@ import datetime
 import json
 import logging
 import sys
+from fastavro import writer
+from fastavro import reader
+from fastavro import parse_schema
+
 
 
 db = SQLAlchemy()
@@ -181,6 +185,71 @@ def job_insert():
     db.session.add_all(valid_inserts)
     db.session.commit()
     _print_error_logs(invalid_inserts, "jobs")
+    return Response(status=200)
+
+
+def _backup_employees():
+    with open("avro/hired_employees.avsc", "rb") as schema_file:
+        schema = parse_schema(json.load(schema_file))
+    
+    rows = db.session.scalars(select(HiredEmployee)).all()
+    
+    with open("/opt/backup/hired_employees.avro", "wb") as avro_file:
+        writer(
+            avro_file,
+            schema,
+            ({
+                "id": row.id,
+                "name": row.name,
+                "datetime": row.datetime.isoformat(),
+                "department_id": row.department_id,
+                "job_id": row.job_id
+            }
+            for row in rows)
+        )
+
+
+def _backup_departments():
+    with open("avro/departments.avsc", "rb") as schema_file:
+        schema = parse_schema(json.load(schema_file))
+
+    rows = db.session.scalars(select(Department)).all()
+    
+    with open("/opt/backup/departments.avro", "wb") as avro_file:
+        writer(
+            avro_file,
+            schema,
+            ({
+                "id": row.id,
+                "department": row.department
+            }
+            for row in rows)
+        )
+
+
+def _backup_jobs():
+    with open("avro/jobs.avsc", "rb") as schema_file:
+        schema = parse_schema(json.load(schema_file))
+    
+    rows = db.session.scalars(select(Job)).all()
+    
+    with open("/opt/backup/jobs.avro", "wb") as avro_file:
+        writer(
+            avro_file,
+            schema,
+            ({
+                "id": row.id,
+                "job": row.job
+            }
+            for row in rows)
+        )
+
+
+@app.route('/backup', methods=['POST'])
+def backup():
+    _backup_employees()
+    _backup_departments()
+    _backup_jobs()
     return Response(status=200)
 
 

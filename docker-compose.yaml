@@ -46,6 +46,7 @@ services:
       dockerfile: persistence.dockerfile
     volumes:
       - ./storage/errored:/opt/errored
+      - ./storage/backup:/opt/backup
     links:
       - db
     depends_on:
