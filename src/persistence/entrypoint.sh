@@ -2,4 +2,4 @@
 cd migration
 alembic upgrade head
 cd ..
-python3 app.py
+flask --app app run --host=0.0.0.0 --debug

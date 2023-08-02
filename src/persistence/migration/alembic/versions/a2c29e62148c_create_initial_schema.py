@@ -32,6 +32,7 @@ def upgrade() -> None:
     op.create_table(
         "hired_employees",
         sa.Column('id', sa.Integer, primary_key=True),
+        sa.Column('name', sa.String(1000), nullable=False),
         sa.Column('datetime', sa.DateTime, nullable=False),
         sa.Column('department_id', sa.Integer, sa.ForeignKey('departments.id'), nullable=False),
         sa.Column('job_id', sa.Integer, sa.ForeignKey('jobs.id'), nullable=False)
