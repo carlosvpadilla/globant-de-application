@@ -1,2 +1,2 @@
 * * * * * python /opt/batch_import.py
-* * * * * python /opt/backup.py
+3 * * * * python /opt/backup.py
