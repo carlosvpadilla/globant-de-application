@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import request
 from flask import Response
+from flask import jsonify
 import logging
 import sys
 import json
@@ -14,7 +15,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 @app.route('/hired_employee/upload', methods=['POST'])
 def hired_employee_push_single():
     response = requests.post(
-        f"http://persistence:5000/hired_employee/insert",
+        "http://persistence:5000/hired_employee/insert",
         data=json.dumps({
             'data': [request.json]
         }),
@@ -31,7 +32,7 @@ def hired_employee_push_batch():
     if len(request.json) > 1000:
         return Response(status=413, body={"msg": "No more than 1000 elements can be batch uploaded."})
     response = requests.post(
-        f"http://persistence:5000/hired_employee/insert",
+        "http://persistence:5000/hired_employee/insert",
         data=json.dumps(request.json),
         headers={
             'Content-type':'application/json', 
@@ -56,7 +57,7 @@ def hired_employee_backup_restore():
 @app.route('/department/upload', methods=['POST'])
 def department_push_single():
     response = requests.post(
-        f"http://persistence:5000/department/insert",
+        "http://persistence:5000/department/insert",
         data=json.dumps({
             'data': [request.json]
         }),
@@ -73,7 +74,7 @@ def department_push_batch():
     if len(request.json) > 1000:
         return Response(status=413, body={"msg": "No more than 1000 elements can be batch uploaded."})
     response = requests.post(
-        f"http://persistence:5000/department/insert",
+        "http://persistence:5000/department/insert",
         data=json.dumps(request.json),
         headers={
             'Content-type':'application/json', 
@@ -86,7 +87,7 @@ def department_push_batch():
 @app.route('/department/backup/restore', methods=['POST'])
 def department_backup_restore():
     response = requests.post(
-        f"http://persistence:5000/department/restore",
+        "http://persistence:5000/department/restore",
         headers={
             'Content-type':'application/json', 
             'Accept':'application/json'
@@ -95,10 +96,34 @@ def department_backup_restore():
     return Response(status=response.status_code)
 
 
+@app.route('/department/hires/quarterly/<year>', methods=['GET'])
+def department_hires_quarterly(year: int):
+    response = requests.get(
+        f"http://persistence:5000/department/hires/quarterly/{year}",
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return jsonify(response.json())
+
+
+@app.route('/department/hires/top/<year>', methods=['GET'])
+def top_department_hires(year: int):
+    response = requests.get(
+        f"http://persistence:5000/department/hires/top/{year}",
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return jsonify(response.json())
+
+
 @app.route('/job/upload', methods=['POST'])
 def job_push_single():
     response = requests.post(
-        f"http://persistence:5000/job/insert",
+        "http://persistence:5000/job/insert",
         data=json.dumps({
             'data': [request.json]
         }),
@@ -115,7 +140,7 @@ def job_push_batch():
     if len(request.json) > 1000:
         return Response(status=413, body={"msg": "No more than 1000 elements can be batch uploaded."})
     response = requests.post(
-        f"http://persistence:5000/job/insert",
+        "http://persistence:5000/job/insert",
         data=json.dumps(request.json),
         headers={
             'Content-type':'application/json', 
@@ -128,14 +153,13 @@ def job_push_batch():
 @app.route('/job/backup/restore', methods=['POST'])
 def job_backup_restore():
     response = requests.post(
-        f"http://persistence:5000/job/restore",
+        "http://persistence:5000/job/restore",
         headers={
             'Content-type':'application/json', 
             'Accept':'application/json'
         })
     response.raise_for_status()
     return Response(status=response.status_code)
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5001)

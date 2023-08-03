@@ -2,12 +2,14 @@ from flask import Flask
 from flask import request
 from flask_sqlalchemy import SQLAlchemy
 from flask import Response
+from flask import jsonify
 from models import HiredEmployee
 from models import Department
 from models import Job
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy import func
+from sqlalchemy import text
 import os
 import datetime
 import json
@@ -16,7 +18,8 @@ import sys
 from fastavro import writer
 from fastavro import reader
 from fastavro import parse_schema
-
+from sqlalchemy.types import String
+from sqlalchemy.types import Integer
 
 
 db = SQLAlchemy()
@@ -290,6 +293,52 @@ def restore_jobs():
             batch.append(record)
     _do_job_insert(batch)
     return Response(status=200)
+
+
+@app.route('/department/hires/quarterly/<year>', methods=['GET'])
+def hires_per_quarter(year: int):
+    with open("sql/hires_per_quarter.sql", "r") as queryfile:
+        query = text(queryfile.read()).bindparams(year=year).columns(
+                department=String,
+                job=Integer,
+                q1=Integer,
+                q2=Integer,
+                q3=Integer,
+                q4=Integer
+            )
+    rows = db.session.execute(query).all()
+    payload = [
+        {
+            "department": row.department,
+            "job": row.job,
+            "q1": row.q1,
+            "q2": row.q2,
+            "q3": row.q3,
+            "q4": row.q4
+        }
+        for row in rows
+    ]
+    return jsonify(payload)
+
+
+@app.route('/department/hires/top/<year>', methods=['GET'])
+def top_department_hires(year: int):
+    with open("sql/top_department_hires.sql", "r") as queryfile:
+        query = text(queryfile.read()).bindparams(year=year).columns(
+                id=Integer,
+                department=String,
+                hired=Integer
+            )
+    rows = db.session.execute(query).all()
+    payload = [
+        {
+            "id": row.id,
+            "department": row.department,
+            "hired": row.hired
+        }
+        for row in rows
+    ]
+    return jsonify(payload)
 
 
 if __name__ == '__main__':
