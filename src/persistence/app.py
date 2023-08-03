@@ -13,6 +13,10 @@ import datetime
 import json
 import logging
 import sys
+from fastavro import writer
+from fastavro import reader
+from fastavro import parse_schema
+
 
 
 db = SQLAlchemy()
@@ -54,9 +58,7 @@ def _next_id(id: int):
         curr_id += 1
 
 
-@app.route('/hired_employee/insert', methods=['POST'])
-def hired_employee_insert():
-    batch = request.json['data']
+def _do_employee_insert(batch: list):
     valid_inserts = []
     invalid_inserts = []
     max_id = db.session.query(func.max(HiredEmployee.id)).scalar()
@@ -92,7 +94,7 @@ def hired_employee_insert():
         if 'id' in element:
             employee_stmt = select(HiredEmployee).where(
                 HiredEmployee.id == element['id'])
-            employee = db.session.execute(employee_stmt).first()
+            employee = db.session.scalars(employee_stmt).first()
             if employee is not None:
                 employee.name = element['name']
                 employee.datetime = element['datetime']
@@ -118,14 +120,17 @@ def hired_employee_insert():
     db.session.commit()
 
     _print_error_logs(invalid_inserts, "hired_employees")
+
+
+@app.route('/hired_employee/insert', methods=['POST'])
+def hired_employee_insert():
+    _do_employee_insert(request.json['data'])
     return Response(status=200)
 
 
-@app.route('/department/insert', methods=['POST'])
-def department_insert():
+def _do_department_insert(batch: list):
     max_id = db.session.query(func.max(Department.id)).scalar()
     next_id = _next_id(max_id)
-    batch = request.json['data']
     invalid_inserts = []
     valid_inserts = []
     for element in batch:
@@ -150,14 +155,17 @@ def department_insert():
     db.session.add_all(valid_inserts)
     db.session.commit()
     _print_error_logs(invalid_inserts, "departments")
+
+
+@app.route('/department/insert', methods=['POST'])
+def department_insert():
+    _do_department_insert(request.json['data'])
     return Response(status=200)
 
 
-@app.route('/job/insert', methods=['POST'])
-def job_insert():
+def _do_job_insert(batch: list):
     max_id = db.session.query(func.max(Job.id)).scalar()
     next_id = _next_id(max_id)
-    batch = request.json['data']
     invalid_inserts = []
     valid_inserts = []
     for element in batch:
@@ -181,6 +189,106 @@ def job_insert():
     db.session.add_all(valid_inserts)
     db.session.commit()
     _print_error_logs(invalid_inserts, "jobs")
+
+
+@app.route('/job/insert', methods=['POST'])
+def job_insert():
+    _do_job_insert(request.json['data'])
+    return Response(status=200)
+
+
+def _backup_employees():
+    with open("avro/hired_employees.avsc", "rb") as schema_file:
+        schema = parse_schema(json.load(schema_file))
+    
+    rows = db.session.scalars(select(HiredEmployee)).all()
+    
+    with open("/opt/backup/hired_employees.avro", "wb") as avro_file:
+        writer(
+            avro_file,
+            schema,
+            ({
+                "id": row.id,
+                "name": row.name,
+                "datetime": row.datetime.isoformat(),
+                "department_id": row.department_id,
+                "job_id": row.job_id
+            }
+            for row in rows)
+        )
+
+
+def _backup_departments():
+    with open("avro/departments.avsc", "rb") as schema_file:
+        schema = parse_schema(json.load(schema_file))
+
+    rows = db.session.scalars(select(Department)).all()
+    
+    with open("/opt/backup/departments.avro", "wb") as avro_file:
+        writer(
+            avro_file,
+            schema,
+            ({
+                "id": row.id,
+                "department": row.department
+            }
+            for row in rows)
+        )
+
+
+def _backup_jobs():
+    with open("avro/jobs.avsc", "rb") as schema_file:
+        schema = parse_schema(json.load(schema_file))
+    
+    rows = db.session.scalars(select(Job)).all()
+    
+    with open("/opt/backup/jobs.avro", "wb") as avro_file:
+        writer(
+            avro_file,
+            schema,
+            ({
+                "id": row.id,
+                "job": row.job
+            }
+            for row in rows)
+        )
+
+
+@app.route('/backup', methods=['POST'])
+def backup():
+    _backup_employees()
+    _backup_departments()
+    _backup_jobs()
+    return Response(status=200)
+
+
+@app.route('/hired_employee/restore', methods=['POST'])
+def restore_hired_employees():
+    batch = []
+    with open("/opt/backup/hired_employees.avro", "rb") as avro_file:
+        for record in reader(avro_file):
+            batch.append(record)
+    _do_employee_insert(batch)
+    return Response(status=200)
+
+
+@app.route('/department/restore', methods=['POST'])
+def restore_departments():
+    batch = []
+    with open("/opt/backup/departments.avro", "rb") as avro_file:
+        for record in reader(avro_file):
+            batch.append(record)
+    _do_department_insert(batch)
+    return Response(status=200)
+
+
+@app.route('/job/restore', methods=['POST'])
+def restore_jobs():
+    batch = []
+    with open("/opt/backup/jobs.avro", "rb") as avro_file:
+        for record in reader(avro_file):
+            batch.append(record)
+    _do_job_insert(batch)
     return Response(status=200)
 
 

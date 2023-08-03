@@ -9,3 +9,4 @@ sqlalchemy==2.0.19
 alembic==1.11.1
 psycopg2-binary==2.9.6
 Flask-SQLAlchemy==3.0.5
+fastavro==1.8.2

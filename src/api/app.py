@@ -41,6 +41,18 @@ def hired_employee_push_batch():
     return Response(status=response.status_code)
 
 
+@app.route('/hired_employee/backup/restore', methods=['POST'])
+def hired_employee_backup_restore():
+    response = requests.post(
+        f"http://persistence:5000/hired_employee/restore",
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return Response(status=response.status_code)
+
+
 @app.route('/department/upload', methods=['POST'])
 def department_push_single():
     response = requests.post(
@@ -71,6 +83,18 @@ def department_push_batch():
     return Response(status=response.status_code)
 
 
+@app.route('/department/backup/restore', methods=['POST'])
+def department_backup_restore():
+    response = requests.post(
+        f"http://persistence:5000/department/restore",
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return Response(status=response.status_code)
+
+
 @app.route('/job/upload', methods=['POST'])
 def job_push_single():
     response = requests.post(
@@ -93,6 +117,18 @@ def job_push_batch():
     response = requests.post(
         f"http://persistence:5000/job/insert",
         data=json.dumps(request.json),
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return Response(status=response.status_code)
+
+
+@app.route('/job/backup/restore', methods=['POST'])
+def job_backup_restore():
+    response = requests.post(
+        f"http://persistence:5000/job/restore",
         headers={
             'Content-type':'application/json', 
             'Accept':'application/json'
