@@ -1,6 +1,7 @@
 from flask import Flask
 from flask import request
 from flask import Response
+from flask import jsonify
 import logging
 import sys
 import json
@@ -95,6 +96,30 @@ def department_backup_restore():
     return Response(status=response.status_code)
 
 
+@app.route('/department/hires/quarterly', methods=['GET'])
+def department_hires_quarterly():
+    response = requests.get(
+        f"http://persistence:5000/department/hires/quarterly",
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return jsonify(response.json())
+
+
+@app.route('/department/hires/top', methods=['GET'])
+def top_department_hires():
+    response = requests.get(
+        f"http://persistence:5000/department/hires/top",
+        headers={
+            'Content-type':'application/json', 
+            'Accept':'application/json'
+        })
+    response.raise_for_status()
+    return jsonify(response.json())
+
+
 @app.route('/job/upload', methods=['POST'])
 def job_push_single():
     response = requests.post(
@@ -135,7 +160,6 @@ def job_backup_restore():
         })
     response.raise_for_status()
     return Response(status=response.status_code)
-
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5001)
