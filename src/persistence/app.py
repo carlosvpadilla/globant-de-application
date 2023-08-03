@@ -295,10 +295,10 @@ def restore_jobs():
     return Response(status=200)
 
 
-@app.route('/department/hires/quarterly', methods=['GET'])
-def hires_per_quarter():
+@app.route('/department/hires/quarterly/<year>', methods=['GET'])
+def hires_per_quarter(year: int):
     with open("sql/hires_per_quarter.sql", "r") as queryfile:
-        query = text(queryfile.read()).columns(
+        query = text(queryfile.read()).bindparams(year=year).columns(
                 department=String,
                 job=Integer,
                 q1=Integer,
@@ -321,10 +321,10 @@ def hires_per_quarter():
     return jsonify(payload)
 
 
-@app.route('/department/hires/top', methods=['GET'])
-def top_department_hires():
+@app.route('/department/hires/top/<year>', methods=['GET'])
+def top_department_hires(year: int):
     with open("sql/top_department_hires.sql", "r") as queryfile:
-        query = text(queryfile.read()).columns(
+        query = text(queryfile.read()).bindparams(year=year).columns(
                 id=Integer,
                 department=String,
                 hired=Integer

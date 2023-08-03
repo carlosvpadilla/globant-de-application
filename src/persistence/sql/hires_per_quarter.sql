@@ -9,7 +9,7 @@ with employees_by_quarter as (
 		else 4
 	end as quarter
 	from hired_employees
-	where extract(year from datetime) = 2021
+	where extract(year from datetime) = :year
 ),
 q1_employees as (
 	select department_id, job_id, count(*) as total_employees

@@ -1,7 +1,7 @@
 with hires_per_department as (
 	select department_id, count(*) as number_of_hires
 	from hired_employees
-	where extract(year from datetime) = 2021
+	where extract(year from datetime) = :year
 	group by department_id
 ),
 mean_of_hires as (
